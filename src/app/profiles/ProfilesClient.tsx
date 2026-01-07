@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
@@ -26,11 +26,11 @@ export default function ProfilesClient({ profiles, user }: ProfilesClientProps) 
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [ageMode, setAgeMode] = useState("4–6");
-  const [activeProfileId, setActiveProfileId] = useState<string | null>(
-    typeof window !== "undefined" 
-      ? localStorage.getItem("willow_active_profile_id") 
-      : null
-  );
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveProfileId(localStorage.getItem("willow_active_profile_id"));
+  }, []);
 
   const handleCreateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
