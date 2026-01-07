@@ -20,7 +20,7 @@ type Avatar = {
   hair_id: string;
   hair_color_id: string;
   outfit_id: string;
-  accessory_id: string;
+  accessory_id?: string;
   is_active: boolean;
 };
 
@@ -40,14 +40,18 @@ export default function AvatarClient() {
 
   useEffect(() => {
     const loadActiveProfile = async () => {
-      const profileId = localStorage.getItem("willow_active_profile_id");
-      setActiveProfileId(profileId);
-      
-      if (profileId) {
-        await loadCurrentAvatar(profileId);
+      try {
+        const profileId = localStorage.getItem("willow_active_profile_id");
+        setActiveProfileId(profileId);
+        
+        if (profileId) {
+          await loadCurrentAvatar(profileId);
+        }
+      } catch (error) {
+        console.error("Error loading active profile:", error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     loadActiveProfile();
@@ -89,44 +93,45 @@ export default function AvatarClient() {
 
     setSaving(true);
 
-    const supabase = supabaseBrowser();
+    try {
+      const supabase = supabaseBrowser();
 
-    // Step 1: Set all existing avatars for this profile to is_active=false
-    const { error: updateError } = await supabase
-      .from("avatars")
-      .update({ is_active: false })
-      .eq("profile_id", activeProfileId);
+      // Step 1: Set all existing avatars for this profile to is_active=false
+      const { error: updateError } = await supabase
+        .from("avatars")
+        .update({ is_active: false })
+        .eq("profile_id", activeProfileId);
 
-    if (updateError) {
-      alert(`Error updating existing avatars: ${updateError.message}`);
+      if (updateError) {
+        throw new Error(`Error updating existing avatars: ${updateError.message}`);
+      }
+
+      // Step 2: Insert new avatar with is_active=true
+      const newAvatar: Omit<Avatar, "id"> = {
+        profile_id: activeProfileId,
+        skin_tone_id: skinToneId,
+        face_id: faceId,
+        hair_id: hairId,
+        hair_color_id: hairColorId,
+        outfit_id: outfitId,
+        accessory_id: accessoryId,
+        is_active: true,
+      };
+
+      const { error: insertError } = await supabase
+        .from("avatars")
+        .insert(newAvatar);
+
+      if (insertError) {
+        throw new Error(`Error creating avatar: ${insertError.message}`);
+      }
+
+      alert("Avatar saved successfully!");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "An error occurred while saving");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    // Step 2: Insert new avatar with is_active=true
-    const newAvatar: Omit<Avatar, "id"> = {
-      profile_id: activeProfileId,
-      skin_tone_id: skinToneId,
-      face_id: faceId,
-      hair_id: hairId,
-      hair_color_id: hairColorId,
-      outfit_id: outfitId,
-      accessory_id: accessoryId,
-      is_active: true,
-    };
-
-    const { error: insertError } = await supabase
-      .from("avatars")
-      .insert(newAvatar);
-
-    if (insertError) {
-      alert(`Error creating avatar: ${insertError.message}`);
-      setSaving(false);
-      return;
-    }
-
-    alert("Avatar saved successfully!");
-    setSaving(false);
   };
 
   if (loading) {
