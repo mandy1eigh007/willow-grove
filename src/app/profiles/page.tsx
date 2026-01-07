@@ -1,5 +1,19 @@
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
+import ProfilesClient from "./ProfilesClient";
+
+type Profile = {
+  id: string;
+  user_id: string;
+  display_name: string;
+  age_mode: string;
+  created_at: string;
+};
+
+type User = {
+  id: string;
+  email?: string;
+};
 
 export default async function ProfilesPage() {
   const supabase = supabaseServer();
@@ -9,11 +23,7 @@ export default async function ProfilesPage() {
     redirect("/login");
   }
 
-  return (
-    <div>
-      <h1>Profiles</h1>
-      <p>Signed-in email: {user.email}</p>
-      <p>Next: create profiles table + UI.</p>
-    </div>
-  );
+  const { data: profiles } = await supabase.from('profiles').select('*').eq('user_id', user.id);
+
+  return <ProfilesClient profiles={profiles || []} user={user} />;
 }
