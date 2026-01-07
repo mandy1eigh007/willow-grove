@@ -117,8 +117,9 @@ export default function AvatarClient() {
       }
 
       alert("Avatar saved successfully!");
-    } catch (error: any) {
-      alert(`Error saving avatar: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      alert(`Error saving avatar: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
